@@ -1,0 +1,84 @@
+camera:
+  source: 0
+  backend: auto
+  width: 1280
+  height: 720
+  fps: 30
+  buffer_size: 1
+  autofocus: true
+  auto_exposure: true
+  auto_white_balance: true
+  exposure: null
+  gain: null
+  focus: null
+  warmup_frames: 30
+
+quality:
+  enabled: true
+  every_n_frames: 10
+  target_brightness: 125.0
+  min_contrast: 28.0
+  min_sharpness: 75.0
+  max_black_clip_ratio: 0.08
+  max_white_clip_ratio: 0.08
+  max_noise_score: 18.0
+
+preprocess:
+  enabled: true
+  adaptive: true
+  clahe: true
+  clahe_clip_limit: 2.0
+  clahe_grid_size: 8
+  denoise: bilateral
+  denoise_strength: 5
+  auto_gamma: true
+  sharpen: true
+  sharpen_amount: 0.75
+
+detector:
+  enabled: true
+  model: yolo26n.pt
+  confidence: 0.35
+  iou: 0.55
+  imgsz: 640
+  device: null
+  half: false
+  classes: null
+  tracking: true
+  tracker: bytetrack.yaml
+
+motion_anomaly:
+  enabled: true
+  history: 500
+  var_threshold: 32.0
+  detect_shadows: true
+  min_motion_ratio: 0.08
+  warmup_frames: 60
+
+events:
+  emit_object_entered: true
+  emit_object_left: false
+  track_ttl_frames: 45
+  global_cooldown_seconds: 0.5
+  zones:
+    - name: center_demo
+      points:
+        - [0.20, 0.20]
+        - [0.80, 0.20]
+        - [0.80, 0.90]
+        - [0.20, 0.90]
+      classes: null
+  count_rules: []
+  save_snapshots: true
+  jsonl_path: outputs/events/events.jsonl
+  snapshots_dir: outputs/snapshots
+  webhook_url: null
+
+display:
+  enabled: true
+  window_name: VisionBrain
+  show_quality: true
+  show_fps: true
+  show_track_ids: true
+  draw_zones: true
+  resize_max_width: 1600

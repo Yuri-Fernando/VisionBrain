@@ -1,0 +1,29 @@
+camera:
+  source: synthetic
+  width: 320
+  height: 180
+  fps: 30
+  warmup_frames: 0
+
+quality:
+  enabled: true
+  every_n_frames: 1
+
+preprocess:
+  enabled: true
+  adaptive: true
+
+detector:
+  enabled: false
+
+motion_anomaly:
+  enabled: false
+
+events:
+  save_snapshots: false
+  jsonl_path: outputs/synthetic_runtime/events.jsonl
+  snapshots_dir: outputs/synthetic_runtime/snapshots
+  webhook_url: null
+
+display:
+  enabled: false

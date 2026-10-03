@@ -1,0 +1,38 @@
+camera:
+  source: 0
+  backend: auto
+  width: 1280
+  height: 720
+  fps: 30
+  buffer_size: 1
+  autofocus: true
+  auto_exposure: true
+  auto_white_balance: true
+  warmup_frames: 20
+quality:
+  enabled: true
+  every_n_frames: 15
+preprocess:
+  enabled: true
+  adaptive: true
+  clahe: true
+  denoise: off
+  auto_gamma: true
+  sharpen: false
+detector:
+  enabled: true
+  model: yolo26n.pt
+  confidence: 0.40
+  iou: 0.55
+  imgsz: 640
+  tracking: true
+  tracker: bytetrack.yaml
+motion_anomaly:
+  enabled: false
+events:
+  emit_object_entered: true
+  save_snapshots: true
+  jsonl_path: outputs/events/events.jsonl
+  snapshots_dir: outputs/snapshots
+display:
+  enabled: true

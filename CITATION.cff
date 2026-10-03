@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+message: "If you use VisionBrain in research or applied experiments, please cite this software."
+title: "VisionBrain Engine"
+version: 0.2.0
+date-released: 2026-10-03
+type: software
+authors:
+  - family-names: "Dubbern"
+    given-names: "Yuri Fernando"
+repository-code: "https://github.com/Yuri-Fernando/VisionBrain"
+license: Apache-2.0
