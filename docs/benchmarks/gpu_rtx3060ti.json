@@ -1,0 +1,34 @@
+{
+  "model": "yolo26n.pt",
+  "frames_per_device": 120,
+  "warmup_iters": 10,
+  "gpu": {
+    "torch_available": true,
+    "cuda_available": true,
+    "device_count": 1,
+    "device_name": "NVIDIA GeForce RTX 3060 Ti",
+    "torch_version": "2.13.0+cu126",
+    "cuda_version": "12.6"
+  },
+  "cpu": {
+    "device": "cpu",
+    "half": false,
+    "imgsz": 640,
+    "frames_measured": 120,
+    "latency_ms_mean": 152.40970000002866,
+    "latency_ms_p50": 135.70310000068275,
+    "latency_ms_p95": 235.6130000007397,
+    "fps_mean": 6.5612621768812085
+  },
+  "cuda": {
+    "device": "cuda:0",
+    "half": true,
+    "imgsz": 640,
+    "frames_measured": 120,
+    "latency_ms_mean": 34.968573333435415,
+    "latency_ms_p50": 32.325600001058774,
+    "latency_ms_p95": 48.427100000481005,
+    "fps_mean": 28.597106049043294
+  },
+  "speedup_cuda_over_cpu": 4.3584763538036935
+}

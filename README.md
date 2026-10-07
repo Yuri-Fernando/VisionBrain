@@ -4,9 +4,11 @@
 
 ## Status
 
-🟡 **MVP técnico funcional — núcleo local validado com 13 testes, lint limpo e notebook end-to-end executado integralmente.**
+🟡 **MVP técnico funcional — núcleo local validado com 19 testes, lint limpo e notebook end-to-end executado integralmente.**
 
-O fluxo sintético e as camadas determinísticas foram validados sem câmera, download de pesos ou serviço externo. Webcam, RTSP, GPU/CUDA e GenICam dependem do hardware, driver e runtime disponíveis no ambiente final e não são apresentados como já validados.
+O fluxo sintético e as camadas determinísticas foram validados sem câmera, download de pesos ou serviço externo. Webcam, RTSP e GenICam continuam dependendo do hardware, driver e runtime do ambiente final e não são apresentados como já validados.
+
+GPU/CUDA, por outro lado, **foi validada com hardware real**: numa NVIDIA GeForce RTX 3060 Ti, o mesmo motor Ultralytics com o mesmo modelo (`yolo26n.pt`) mediu ~4.36x de speedup em CUDA fp16 vs CPU (28.6 FPS vs 6.56 FPS médios). Detalhes e números completos em [`docs/benchmarks/gpu_rtx3060ti.md`](docs/benchmarks/gpu_rtx3060ti.md). Isso valida o device de inferência nesta GPU específica — não valida webcam/RTSP/GenICam nem desempenho em outra GPU, e o caminho 100% sintético/sem hardware continua existindo e suportado para quem não tiver GPU.
 
 ## Descrição / Contexto
 
@@ -117,7 +119,7 @@ sensor -> aquisição -> quality gate -> preprocessamento -> inferência
 | Camera Lab | Discovery, probe, autotune, diagnóstico e filtros | ✅ Implementado |
 | Quality Gate | Brilho, contraste, foco, entropia, clipping, ruído e color cast | ✅ Implementado |
 | Preprocess | Gamma, CLAHE, denoise e unsharp mask adaptativos | ✅ Implementado |
-| Detection | YOLO com detecção e tracking persistente | ✅ Implementado · peso opcional |
+| Detection | YOLO com detecção e tracking persistente | ✅ Implementado · peso opcional · GPU/CUDA validada em hardware real (RTX 3060 Ti) |
 | Analytics | Entrada/saída de zona, contagem e motion anomaly | ✅ Baseline implementada |
 | Event Delivery | JSONL, snapshots, fila de webhook e spool de falhas | ✅ Implementado |
 | Dashboard | KPIs, filtros, timeline, tabela e evidence viewer | ✅ Implementado |
@@ -209,6 +211,27 @@ O backend e o driver podem aceitar uma propriedade sem aplicá-la exatamente. Se
 
 ---
 
+## 🎮 Benchmark real CPU vs GPU
+
+Quando há uma GPU NVIDIA com CUDA disponível, o mesmo motor Ultralytics pode ser
+medido de verdade em CPU e em GPU, sobre os mesmos frames sintéticos determinísticos:
+
+```powershell
+pip install -e ".[yolo,dev]"
+
+visionbrain gpu-info
+visionbrain benchmark-gpu --config config/default.yaml --frames 120 --warmup-iters 10 --output docs/benchmarks/gpu_rtx3060ti.json
+```
+
+`gpu-info` confirma `torch.cuda.is_available()` e o nome da GPU antes de qualquer
+medição e imprime o perfil de device/resolução/precisão recomendado pelo autotune
+(`cuda:0` + `imgsz=640` + `half=True` quando há GPU; `cpu` + `imgsz=320` sem GPU).
+`benchmark-gpu` levanta erro claro se nenhuma GPU CUDA real for encontrada, em vez de
+reportar números de CPU como se fossem benchmark de GPU. Números medidos numa RTX
+3060 Ti: [`docs/benchmarks/gpu_rtx3060ti.md`](docs/benchmarks/gpu_rtx3060ti.md).
+
+---
+
 ## 📊 Dashboard operacional
 
 O dashboard é local e somente leitura. Ele não controla câmera nem executa inferência.
@@ -281,15 +304,16 @@ O modelo pode exigir download na primeira execução. A resposta multimodal é u
 
 ## 🧪 Validação
 
-Validação local realizada para a versão `0.2.0`:
+Validação local realizada para a versão `0.3.0`:
 
 ```text
-pytest:              13 passed
+pytest:              19 passed (13 sintéticos/CI + 6 GPU, nenhum skip nesta máquina)
 ruff:                All checks passed
 compileall:          ok
-CLI:                 comandos carregados
+CLI:                 comandos carregados (incluindo gpu-info e benchmark-gpu)
 demo sintético:      executado
 notebook E2E:        executado integralmente
+benchmark GPU real:  executado na RTX 3060 Ti (ver docs/benchmarks/gpu_rtx3060ti.md)
 ```
 
 Execute novamente:
@@ -299,7 +323,7 @@ python -m pytest -q
 python -m ruff check src tests apps
 ```
 
-Os testes não abrem webcam, não baixam modelos e não chamam serviços externos.
+A maior parte dos testes não abre webcam, não baixa modelos e não chama serviços externos. A exceção é `tests/test_gpu_benchmark.py::test_compare_cpu_gpu_measures_real_latency_on_available_hardware`, que baixa o peso Ultralytics configurado e mede CPU/CUDA de verdade — mas só roda quando `torch.cuda.is_available()` é `True`; em máquina sem GPU CUDA ela é pulada (`skip`) automaticamente, sem quebrar a suíte.
 
 ---
 
@@ -387,7 +411,7 @@ Roadmap detalhado: [`docs/ROADMAP.md`](docs/ROADMAP.md).
 - O quality score é heurístico; thresholds devem ser calibrados por câmera e tarefa;
 - MOG2 detecta mudança/movimento, não substitui anomaly detection industrial aprendida;
 - A fonte sintética valida orquestração, não acurácia de modelo;
-- Webcam, RTSP, CUDA e GenICam precisam de benchmark no hardware final;
+- Webcam, RTSP e GenICam precisam de benchmark no hardware final; CUDA já foi benchmarkada em hardware real (RTX 3060 Ti, ver `docs/benchmarks/gpu_rtx3060ti.md`), mas uma GPU diferente deve ser medida novamente antes de qualquer decisão de capacidade;
 - O dashboard atual é operacional/local, não multi-tenant;
 - Ultralytics é opcional e possui licenciamento próprio. Uso comercial exige revisão das licenças de código, pesos, datasets e SDKs.
 
@@ -401,6 +425,7 @@ Roadmap detalhado: [`docs/ROADMAP.md`](docs/ROADMAP.md).
 - [Integração SaaS](docs/SAAS_INTEGRATION.md)
 - [Dashboard e E2E](DASHBOARD_AND_E2E.md)
 - [Quickstart Windows](QUICKSTART.md)
+- [Benchmark real CPU vs GPU (RTX 3060 Ti)](docs/benchmarks/gpu_rtx3060ti.md)
 
 ---
 

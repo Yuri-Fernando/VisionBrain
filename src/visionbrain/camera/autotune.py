@@ -32,6 +32,51 @@ class CandidateResult:
 DEFAULT_RESOLUTIONS = [(640, 480), (1280, 720), (1920, 1080)]
 
 
+@dataclass(slots=True)
+class DetectorProfile:
+    """Recommended inference device/resolution profile for this run."""
+
+    device: str
+    imgsz: int
+    half: bool
+    rationale: str
+
+
+def recommend_detector_profile(
+    cuda_available: bool,
+    device_name: str | None = None,
+) -> DetectorProfile:
+    """Pick a detector profile based on real GPU availability, not configuration intent.
+
+    This is the GPU-aware counterpart of :func:`auto_tune_resolution`: that function
+    autotunes the *camera* capture resolution against measured quality/FPS; this one
+    autotunes the *detector* device/resolution/precision against the hardware that is
+    actually present. When a CUDA GPU is available it recommends a larger inference
+    resolution with half precision (both only pay off with real GPU throughput); when
+    none is available it recommends CPU with a smaller resolution to keep latency
+    bounded instead of silently running an expensive config on CPU.
+    """
+    if cuda_available:
+        return DetectorProfile(
+            device="cuda:0",
+            imgsz=640,
+            half=True,
+            rationale=(
+                f"CUDA GPU detectada ({device_name or 'nome indisponivel'}): "
+                "resolucao de inferencia maior e half precision (fp16) sao viaveis."
+            ),
+        )
+    return DetectorProfile(
+        device="cpu",
+        imgsz=320,
+        half=False,
+        rationale=(
+            "Nenhuma GPU CUDA detectada: half precision nao e suportada de forma "
+            "confiavel em CPU e resolucao menor mantem a latencia controlada."
+        ),
+    )
+
+
 def stabilize_auto_controls(camera: OpenCVCamera, seconds: float = 1.0) -> None:
     camera.set_property("autofocus", 1.0)
     camera.set_property("auto_wb", 1.0)

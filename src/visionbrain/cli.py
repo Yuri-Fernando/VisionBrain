@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
+from dataclasses import asdict
 from pathlib import Path
 
 import cv2
@@ -11,12 +12,14 @@ from rich import print
 from rich.table import Table
 
 from visionbrain.benchmark import benchmark as run_benchmark
+from visionbrain.benchmark import compare_cpu_gpu
 from visionbrain.calibration.chessboard import collect_and_calibrate
-from visionbrain.camera.autotune import auto_tune_resolution
+from visionbrain.camera.autotune import auto_tune_resolution, recommend_detector_profile
 from visionbrain.camera.discovery import discover_webcams
 from visionbrain.camera.opencv_source import OpenCVCamera
 from visionbrain.config import CameraConfig, load_config
 from visionbrain.demo import run_synthetic_e2e
+from visionbrain.inference.gpu_info import detect_gpu
 from visionbrain.inference.vlm import SnapshotVLM
 from visionbrain.preprocess.lab import run_filter_lab
 from visionbrain.quality.advisor import recommendations
@@ -134,6 +137,39 @@ def benchmark(config: str = "config/default.yaml", frames: int = 200, source: st
         cfg.camera.source = parse_source(source)
     result = run_benchmark(cfg, frames=frames)
     print(json.dumps(result, indent=2, ensure_ascii=False, default=str))
+
+
+@app.command(name="gpu-info")
+def gpu_info():
+    """Report whether a real CUDA GPU is available via torch on this machine."""
+    info = detect_gpu()
+    print(json.dumps(asdict(info), indent=2, ensure_ascii=False))
+    profile = recommend_detector_profile(info.cuda_available, info.device_name)
+    print(json.dumps(asdict(profile), indent=2, ensure_ascii=False))
+
+
+@app.command(name="benchmark-gpu")
+def benchmark_gpu(
+    config: str = "config/default.yaml",
+    frames: int = 60,
+    warmup_iters: int = 5,
+    model: str | None = None,
+    output: str | None = None,
+):
+    """Measure real CPU vs CUDA inference latency/FPS with the configured YOLO model.
+
+    Uses the deterministic synthetic camera for both runs so the comparison isolates
+    the inference device. Fails loudly if no CUDA GPU is detected instead of silently
+    reporting CPU-only numbers as a GPU benchmark.
+    """
+    cfg = load_config(config)
+    result = compare_cpu_gpu(cfg, frames=frames, warmup_iters=warmup_iters, model=model)
+    payload = json.dumps(result, indent=2, ensure_ascii=False, default=str)
+    print(payload)
+    if output:
+        out_path = Path(output)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(payload, encoding="utf-8")
 
 
 @app.command()
